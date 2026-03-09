@@ -71,6 +71,7 @@
 		"adonis-autoswagger": "^3.73.0",
 		"better-sqlite3": "^12.6.2",
 		"luxon": "^3.7.2",
+		"mysql2": "^3.19.1",
 		"reflect-metadata": "^0.2.2"
 	},
 	"hotHook": {
