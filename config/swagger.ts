@@ -2,9 +2,7 @@
 import path from "node:path";
 import url from "node:url";
 
-import packageJson from "../package.json" with {
-	type: "json",
-};
+import packageJson from "../package.json" with { type: "json" };
 
 const { description, name, version } = packageJson;
 
@@ -30,7 +28,13 @@ export default {
 		parameters: {}, // OpenAPI conform parameters that are commonly used
 		headers: {}, // OpenAPI conform headers that are commonly used
 	},
-	securitySchemes: {}, // optional
+	securitySchemes: {
+		BearerAuth: {
+			type: "http",
+			scheme: "bearer",
+			bearerFormat: "JWT",
+		},
+	}, // optional
 	authMiddlewares: ["auth", "auth:api"], // optional
 	defaultSecurityScheme: "BearerAuth", // optional
 	persistAuthorization: true, // persist authorization between reloads on the swagger page

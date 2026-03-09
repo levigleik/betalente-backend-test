@@ -12,6 +12,7 @@ import { controllers } from "#generated/controllers";
 import { middleware } from "#start/kernel";
 import router from "@adonisjs/core/services/router";
 import AutoSwagger from "adonis-autoswagger";
+import { applySwaggerExamples } from "../config/swagger_examples.ts";
 
 router.get("/", () => {
 	return { hello: "world" };
@@ -40,14 +41,13 @@ router
 	})
 	.prefix("/api/v1");
 
-// returns swagger in YAML
 router.get("/swagger", async () => {
-	return AutoSwagger.default.docs(router.toJSON(), swagger);
+	const spec = await AutoSwagger.default.json(router.toJSON(), swagger);
+
+	return AutoSwagger.default.jsonToYaml(applySwaggerExamples(spec));
 });
 
 // Renders Swagger-UI and passes YAML-output of /swagger
 router.get("/docs", async () => {
 	return AutoSwagger.default.ui("/swagger", swagger);
-	// return AutoSwagger.default.scalar("/swagger"); to use Scalar instead. If you want, you can pass proxy url as second argument here.
-	// return AutoSwagger.default.rapidoc("/swagger", "view"); to use RapiDoc instead (pass "view" default, or "read" to change the render-style)
 });
