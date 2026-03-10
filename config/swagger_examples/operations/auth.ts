@@ -5,22 +5,23 @@ import {
 	loginExample,
 	logoutSuccessExample,
 	signupExample,
-} from "../examples/auth.ts";
-import type { OperationOverride } from "../types.js";
+	signupSuccessExample,
+} from "../examples/auth.js"
+import type { OperationOverride } from "../types.js"
 
 export const authOperationOverrides: Record<
 	string,
 	Record<string, OperationOverride>
 > = {
-	"/api/v1/auth/signup": {
+	"/v1/auth/signup": {
 		post: {
 			requestExample: signupExample,
 			responses: {
-				200: authSuccessExample,
+				200: signupSuccessExample,
 			},
 		},
 	},
-	"/api/v1/auth/login": {
+	"/v1/auth/login": {
 		post: {
 			requestExample: loginExample,
 			responses: {
@@ -29,18 +30,18 @@ export const authOperationOverrides: Record<
 			},
 		},
 	},
-	"/api/v1/auth/logout": {
+	"/v1/auth/logout": {
 		post: {
 			responses: {
 				200: logoutSuccessExample,
 			},
 		},
 	},
-	"/api/v1/account/profile": {
+	"/v1/account/profile": {
 		get: {
 			responses: {
 				200: authenticatedUserExample,
 			},
 		},
 	},
-};
+}

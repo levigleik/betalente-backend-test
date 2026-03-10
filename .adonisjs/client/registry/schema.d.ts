@@ -45,14 +45,14 @@ export interface Registry {
   }
   'purchases.store': {
     methods: ["POST"]
-    pattern: '/v1/purchases/purchase'
+    pattern: '/v1/purchase'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/purchase').createPurchaseValidator)>>
       paramsTuple: []
       params: {}
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/purchase').createPurchaseValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/purchases_controller').default['store']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/purchases_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/purchases_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'transactions.index': {
@@ -143,24 +143,24 @@ export interface Registry {
     methods: ["POST"]
     pattern: '/v1/products'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/product').createProductValidator)>>
       paramsTuple: []
       params: {}
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/product').createProductValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/products_controller').default['store']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/products_controller').default['store']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/products_controller').default['store']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'products.update': {
     methods: ["PUT"]
     pattern: '/v1/products/:id'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/product').updateProductValidator)>>
       paramsTuple: [ParamValue]
       params: { id: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/product').updateProductValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/products_controller').default['update']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/products_controller').default['update']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/products_controller').default['update']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
   'products.destroy': {
@@ -203,12 +203,12 @@ export interface Registry {
     methods: ["PATCH"]
     pattern: '/v1/gateways/:id/priority'
     types: {
-      body: {}
+      body: ExtractBody<InferInput<(typeof import('#validators/gateway').updateGatewayPriorityValidator)>>
       paramsTuple: [ParamValue]
       params: { id: ParamValue }
-      query: {}
+      query: ExtractQuery<InferInput<(typeof import('#validators/gateway').updateGatewayPriorityValidator)>>
       response: ExtractResponse<Awaited<ReturnType<import('#controllers/gateways_controller').default['updatePriority']>>>
-      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/gateways_controller').default['updatePriority']>>>
+      errorResponse: ExtractErrorResponse<Awaited<ReturnType<import('#controllers/gateways_controller').default['updatePriority']>>> | { status: 422; response: { errors: SimpleError[] } }
     }
   }
 }

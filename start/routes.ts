@@ -12,7 +12,7 @@ import { controllers } from "#generated/controllers"
 import { middleware } from "#start/kernel"
 import router from "@adonisjs/core/services/router"
 import AutoSwagger from "adonis-autoswagger"
-import { applySwaggerExamples } from "../config/swagger_examples.ts"
+import { applySwaggerExamples } from "../config/swagger_examples.js"
 
 router.group(() => {
 	// Public
@@ -32,9 +32,7 @@ router.group(() => {
 		.as("auth")
 
 	// Purchases (public)
-	router
-		.post("purchase", [controllers.Purchases, "store"])
-		.prefix("v1/purchases")
+	router.post("purchase", [controllers.Purchases, "store"]).prefix("v1")
 
 	// Private
 	router

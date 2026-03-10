@@ -4,8 +4,9 @@ import {
 	loginExample,
 	logoutSuccessExample,
 	signupExample,
-} from "../examples/auth.ts";
-import type { SchemaOverride } from "../types.ts";
+	signupSuccessExample,
+} from "../examples/auth.js"
+import type { SchemaOverride } from "../types.js"
 
 export const authSchemaOverrides: Record<string, SchemaOverride> = {
 	signupValidator: {
@@ -20,7 +21,10 @@ export const authSchemaOverrides: Record<string, SchemaOverride> = {
 	AuthSuccessResponseDto: {
 		example: authSuccessExample,
 	},
+	SignupSuccessResponseDto: {
+		example: signupSuccessExample,
+	},
 	LogoutResponseDto: {
 		example: logoutSuccessExample,
 	},
-};
+}
