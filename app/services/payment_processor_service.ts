@@ -1,57 +1,57 @@
-import Gateway from "#models/gateway";
-import GatewayOneService from "#services/gateways/gateway_one_service";
-import GatewayTwoService from "#services/gateways/gateway_two_service";
+import Gateway from "#models/gateway"
+import GatewayOneService from "#services/gateways/gateway_one_service"
+import GatewayTwoService from "#services/gateways/gateway_two_service"
 
 type ProcessPayload = {
-	amount: number;
-	name: string;
-	email: string;
-	cardNumber: string;
-	cvv: string;
-};
+	amount: number
+	name: string
+	email: string
+	cardNumber: string
+	cvv: string
+}
 
 type ProcessResult = {
-	success: boolean;
-	gatewayId?: number;
-	externalId?: string;
-	error?: string;
-};
+	success: boolean
+	gatewayId?: number
+	externalId?: string
+	error?: string
+}
 
 export default class PaymentProcessorService {
 	async process(payload: ProcessPayload): Promise<ProcessResult> {
 		const gateways = await Gateway.query()
 			.where("is_active", true)
-			.orderBy("priority", "asc");
+			.orderBy("priority", "asc")
 
 		for (const gateway of gateways) {
-			let service: GatewayOneService | GatewayTwoService | null = null;
+			let service: GatewayOneService | GatewayTwoService | null = null
 
 			if (gateway.name === "gateway_1") {
-				service = new GatewayOneService();
+				service = new GatewayOneService()
 			}
 
 			if (gateway.name === "gateway_2") {
-				service = new GatewayTwoService();
+				service = new GatewayTwoService()
 			}
 
 			if (!service) {
-				continue;
+				continue
 			}
 
-			const result = await service.charge(payload);
+			const result = await service.charge(payload)
 
 			if (result.success) {
 				return {
 					success: true,
 					gatewayId: gateway.id,
 					externalId: result.externalId,
-				};
+				}
 			}
 		}
 
 		return {
 			success: false,
 			error: "Todos os gateways falharam",
-		};
+		}
 	}
 }

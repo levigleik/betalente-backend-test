@@ -1,0 +1,66 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3335:3333"
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: 3333
+      LOG_LEVEL: info
+      APP_KEY: 3N0LuiwD2Nux4K22AG5UUG26Lh7YdBO5
+      APP_URL: http://localhost:3335
+      SESSION_DRIVER: cookie
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: root
+      DB_DATABASE: gateway_sample
+      GATEWAY_1_URL: http://gateway1:3001
+      GATEWAY_2_URL: http://gateway2:3001
+    depends_on:
+      db:
+        condition: service_healthy
+      gateway1:
+        condition: service_started
+      gateway2:
+        condition: service_started
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: gateway_sample
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-proot", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  gateway1:
+    image: matheusprotzen/gateways-mock
+    ports:
+      - "3001:3001"
+    environment:
+      REMOVE_AUTH: "true"
+    restart: unless-stopped
+
+  gateway2:
+    image: matheusprotzen/gateways-mock
+    ports:
+      - "3002:3001"
+    environment:
+      REMOVE_AUTH: "true"
+    restart: unless-stopped
+
+volumes:
+  mysql_data:

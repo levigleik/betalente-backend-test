@@ -26,8 +26,8 @@ const routes = {
   },
   'purchases.store': {
     methods: ["POST"],
-    pattern: '/v1/purchases/purchase',
-    tokens: [{"old":"/v1/purchases/purchase","type":0,"val":"v1","end":""},{"old":"/v1/purchases/purchase","type":0,"val":"purchases","end":""},{"old":"/v1/purchases/purchase","type":0,"val":"purchase","end":""}],
+    pattern: '/v1/purchase',
+    tokens: [{"old":"/v1/purchase","type":0,"val":"v1","end":""},{"old":"/v1/purchase","type":0,"val":"purchase","end":""}],
     types: placeholder as Registry['purchases.store']['types'],
   },
   'transactions.index': {

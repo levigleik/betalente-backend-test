@@ -1,10 +1,10 @@
 // for AdonisJS v6
-import path from "node:path";
-import url from "node:url";
+import path from "node:path"
+import url from "node:url"
 
-import packageJson from "../package.json" with { type: "json" };
+import packageJson from "../package.json" with { type: "json" }
 
-const { description, name, version } = packageJson;
+const { description, name, version } = packageJson
 
 export default {
 	// path: __dirname + "/../", for AdonisJS v5
@@ -13,7 +13,7 @@ export default {
 	version: version, // use info instead
 	description: description, // use info instead
 	tagIndex: 2,
-	productionEnv: "production", // optional
+	// productionEnv: "production", // optional
 	info: {
 		title: name,
 		version: version,
@@ -39,4 +39,4 @@ export default {
 	defaultSecurityScheme: "BearerAuth", // optional
 	persistAuthorization: true, // persist authorization between reloads on the swagger page
 	showFullPath: false, // the path displayed after endpoint summary
-};
+}

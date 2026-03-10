@@ -3,6 +3,11 @@ import Transaction from "#models/transaction"
 import RefundTransactionService from "#services/refund_transaction_service"
 
 export default class TransactionsController {
+	/**
+	 * @index
+	 * @summary Listar transações
+	 * @responseBody 200 - <TransactionListResponseDto>
+	 */
 	async index({ response }: HttpContext) {
 		const transactions = await Transaction.query()
 			.preload("client")
@@ -14,6 +19,11 @@ export default class TransactionsController {
 		})
 	}
 
+	/**
+	 * @show
+	 * @summary Obter transação
+	 * @responseBody 200 - <TransactionDetailResponseDto>
+	 */
 	async show({ params, response }: HttpContext) {
 		const transaction = await Transaction.query()
 			.where("id", params.id)
@@ -29,6 +39,12 @@ export default class TransactionsController {
 		})
 	}
 
+	/**
+	 * @refund
+	 * @summary Reembolsar transação
+	 * @responseBody 200 - <TransactionMessageDataResponseDto>
+	 * @responseBody 400 - <MessageResponseDto>
+	 */
 	async refund({ params, response }: HttpContext) {
 		const transaction = await Transaction.query()
 			.where("id", params.id)

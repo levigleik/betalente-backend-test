@@ -1,5 +1,5 @@
-import { operationOverrides } from "./operations/index.ts";
-import { schemaOverrides } from "./schemas/index.ts";
+import { operationOverrides } from "./operations/index.js";
+import { schemaOverrides } from "./schemas/index.js";
 
 function applySchemaOverrides(spec: any) {
 	const schemas = spec?.components?.schemas;
