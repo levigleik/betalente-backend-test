@@ -2,6 +2,11 @@ import Client from "#models/client"
 import type { HttpContext } from "@adonisjs/core/http"
 
 export default class ClientsController {
+	/**
+	 * @index
+	 * @summary Listar clientes
+	 * @responseBody 200 - <ClientListResponseDto>
+	 */
 	async index({ response }: HttpContext) {
 		const clients = await Client.query().orderBy("id", "desc")
 
@@ -10,6 +15,11 @@ export default class ClientsController {
 		})
 	}
 
+	/**
+	 * @show
+	 * @summary Obter cliente
+	 * @responseBody 200 - <ClientDetailResponseDto>
+	 */
 	async show({ params, response }: HttpContext) {
 		const client = await Client.query()
 			.where("id", params.id)

@@ -32,9 +32,7 @@ router.group(() => {
 		.as("auth")
 
 	// Purchases (public)
-	router
-		.post("purchase", [controllers.Purchases, "store"])
-		.prefix("v1/purchases")
+	router.post("purchase", [controllers.Purchases, "store"]).prefix("v1")
 
 	// Private
 	router

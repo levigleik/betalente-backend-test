@@ -45,7 +45,7 @@ export interface Registry {
   }
   'purchases.store': {
     methods: ["POST"]
-    pattern: '/v1/purchases/purchase'
+    pattern: '/v1/purchase'
     types: {
       body: {}
       paramsTuple: []

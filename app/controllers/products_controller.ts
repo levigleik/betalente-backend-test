@@ -2,6 +2,11 @@ import type { HttpContext } from "@adonisjs/core/http"
 import Product from "#models/product"
 
 export default class ProductsController {
+	/**
+	 * @index
+	 * @summary Listar produtos
+	 * @responseBody 200 - <ProductListResponseDto>
+	 */
 	async index({ response }: HttpContext) {
 		const products = await Product.all()
 
@@ -10,6 +15,11 @@ export default class ProductsController {
 		})
 	}
 
+	/**
+	 * @show
+	 * @summary Obter produto
+	 * @responseBody 200 - <ProductDetailResponseDto>
+	 */
 	async show({ params, response }: HttpContext) {
 		const product = await Product.findOrFail(params.id)
 
@@ -18,6 +28,12 @@ export default class ProductsController {
 		})
 	}
 
+	/**
+	 * @store
+	 * @summary Criar produto
+	 * @requestBody <CreateProductDto>
+	 * @responseBody 201 - <ProductMessageDataResponseDto>
+	 */
 	async store({ request, response }: HttpContext) {
 		const payload = request.only(["name", "amount"])
 
@@ -32,6 +48,12 @@ export default class ProductsController {
 		})
 	}
 
+	/**
+	 * @update
+	 * @summary Atualizar produto
+	 * @requestBody <CreateProductDto>
+	 * @responseBody 200 - <ProductMessageDataResponseDto>
+	 */
 	async update({ params, request, response }: HttpContext) {
 		const product = await Product.findOrFail(params.id)
 		const payload = request.only(["name", "amount"])
@@ -45,6 +67,11 @@ export default class ProductsController {
 		})
 	}
 
+	/**
+	 * @destroy
+	 * @summary Remover produto
+	 * @responseBody 200 - <MessageResponseDto>
+	 */
 	async destroy({ params, response }: HttpContext) {
 		const product = await Product.findOrFail(params.id)
 
