@@ -1,7 +1,7 @@
-import User from "#models/user"
-import { signupValidator } from "#validators/user"
 import type { HttpContext } from "@adonisjs/core/http"
+import User from "#models/user"
 import UserTransformer from "#transformers/user_transformer"
+import { signupValidator } from "#validators/user"
 
 export default class NewAccountController {
 	/**
