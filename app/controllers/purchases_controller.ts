@@ -6,11 +6,56 @@ import { createPurchaseValidator } from "#validators/purchase"
 
 export default class PurchasesController {
 	/**
-	 * @store
-	 * @summary Realizar compra
-	 * @requestBody <CreatePurchaseDto>
-	 * @responseBody 200 - <PurchaseSuccessResponseDto>
-	 * @responseBody 400 - <MessageResponseDto>
+	 * @openapi
+	 * /v1/purchase:
+	 *   post:
+	 *     tags:
+	 *       - Purchases
+	 *     summary: Realizar compra
+	 *     description: Cria uma transação, tenta processar o pagamento nos gateways ativos e retorna o resultado final.
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/CreatePurchaseRequest'
+	 *     responses:
+	 *       '200':
+	 *         description: Pagamento processado com sucesso.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               required:
+	 *                 - message
+	 *                 - data
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Pagamento realizado com sucesso
+	 *                 data:
+	 *                   $ref: '#/components/schemas/TransactionWithClientGateway'
+	 *       '400':
+	 *         description: Não foi possível processar o pagamento.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               required:
+	 *                 - message
+	 *                 - data
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Não foi possível processar o pagamento
+	 *                 data:
+	 *                   $ref: '#/components/schemas/Transaction'
+	 *       '422':
+	 *         description: Erro de validação.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ValidationErrorResponse'
 	 */
 	async store({ request, response }: HttpContext) {
 		const payload = await request.validateUsing(createPurchaseValidator)

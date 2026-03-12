@@ -11,7 +11,7 @@ Este é um sistema de gerenciador de pagamentos multi-gateway que se conecta a d
 - **Framework**: AdonisJS v7
 - **Linguagem**: TypeScript/Node.js
 - **Banco de Dados**: MySQL 8.0
-- **Documentação**: Swagger/OpenAPI (auto-gerada)
+- **Documentação**: Swagger/OpenAPI manual com `@openapi`
 - **Containerização**: Docker & Docker Compose
 - **Testes**: Japa
 - **Linting**: Biome
@@ -44,7 +44,8 @@ Este é um sistema de gerenciador de pagamentos multi-gateway que se conecta a d
 
    Isso irá iniciar:
    - Aplicação (porta 3335)
-   - Banco de dados MySQL (porta 3307)
+   - Banco de dados MySQL (porta 3307) 
+   > Deixei expondo a porta 3307 para caso já tenha um serviço local rodando na 3306
    - Gateway 1 mock (porta 3001)
    - Gateway 2 mock (porta 3002)
 
@@ -88,14 +89,14 @@ Este é um sistema de gerenciador de pagamentos multi-gateway que se conecta a d
 
 ### Swagger UI
 
-O projeto possui documentação auto-gerada com Swagger. Para visualizar:
+O projeto possui documentação Swagger manual via blocos `@openapi` nos controllers e schemas compartilhados em `app/docs/components.ts`. Para visualizar:
 
 - **Acesse**: http://localhost:3335/docs
-- **Especificação YAML**: http://localhost:3335/swagger (formato YAML)
+- **Especificação JSON**: http://localhost:3335/swagger
 
 ### Gerar Documentação
 
-> **Importante**: Em ambiente de desenvolvimento, a documentação já é auto-gerada dinamicamente através do endpoint `/docs`. O comando `docs:generate` é útil principalmente para builds de produção, quando você precisa gerar o arquivo `swagger.json` estático.
+> **Importante**: Em ambiente de desenvolvimento, a spec é montada dinamicamente a partir dos blocos `@openapi`. O comando `docs:generate` gera os arquivos estáticos `swagger.json` e `swagger.yml`, usados principalmente no build/produção.
 
 ```bash
 npm run docs:generate
@@ -107,6 +108,9 @@ npm run docs:generate
 - `POST /v1/auth/login` - Login de usuário
 - `POST /v1/auth/signup` - Criar nova conta
 - `POST /v1/auth/logout` - Logout (requer autenticação)
+
+### Perfil (Privada)
+- `GET /v1/profile` - Obter dados do usuário autenticado
 
 ### Compras (Pública)
 - `POST /v1/purchase` - Realizar uma compra
@@ -162,32 +166,6 @@ O sistema possui uma arquitetura modular para gateways:
 - **Payment Processor Service**: Orquestrador do processamento de pagamentos
 - **Refund Transaction Service**: Serviço de reembolso
 
-```bash
-npm run test:coverage
-```
-
-## 🔧 Scripts Úteis
-
-```bash
-# Desenvolvimento
-npm run dev          # Inicia servidor com hot-reload
-npm run build        # Build para produção
-npm run start        # Inicia servidor de produção
-
-# Qualidade de código
-npm run lint         # Verifica linting
-npm run format       # Formata código
-npm run typecheck    # Verifica tipos TypeScript
-
-# Banco de dados
-npm run migration:run    # Executa migrações
-npm run migration:rollback # Reverte migrações
-npm run seed        # Executa seeds
-
-# Documentação
-npm run docs:generate    # Gera documentação Swagger
-```
-
 ## 🧪 Testes
 
 ### Configuração do Ambiente de Testes
@@ -239,57 +217,6 @@ DB_DATABASE=gateway_sample
 # Gateways
 GATEWAY_1_URL=http://localhost:3001
 GATEWAY_2_URL=http://localhost:3002
-
-# CORS (opcional)
-CORS_ORIGIN=http://localhost:5173,http://localhost:3000
 ```
-
-## 🐳 Docker
-
-### Docker Compose Services
-
-O projeto inclui 4 serviços no Docker Compose:
-
-1. **app**: Aplicação AdonisJS
-2. **db**: Banco de dados MySQL 8.0
-3. **gateway1**: Mock do primeiro gateway de pagamento
-4. **gateway2**: Mock do segundo gateway de pagamento
-
-### Comandos Docker
-
-```bash
-# Iniciar todos os serviços
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f app
-
-# Parar serviços
-docker-compose down
-
-# Reconstruir imagem
-docker-compose build --no-cache app
-
-# Executar comando no container
-docker-compose exec app node ace migration:run
-```
-
-## 🔐 Segurança
-
-- Autenticação baseada em tokens JWT
-- Middleware de proteção CSRF
-- Configuração CORS personalizável
-- Validação de entrada com VineJS
-- Rate limiting e proteção contra ataques comuns
-
-## 📊 Monitoramento
-
-A aplicação possui logging estruturado com diferentes níveis:
-- `error`: Erros críticos
-- `warn`: Avisos importantes
-- `info`: Informações gerais
-- `debug`: Informações de depuração
-
----
 
 **Desenvolvido com ❤️ por [Levi Gleik](https://github.com/levigleik) para BeTalent Tech**

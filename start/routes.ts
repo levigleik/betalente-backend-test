@@ -7,29 +7,31 @@
 |
 */
 
+import router from "@adonisjs/core/services/router"
 import swagger from "#config/swagger"
+import {
+	generateSwaggerSpec,
+	readSwaggerSpec,
+	readSwaggerUiAsset,
+	renderSwaggerUiHtml,
+} from "#config/swagger_util"
 import { controllers } from "#generated/controllers"
 import { middleware } from "#start/kernel"
-import router from "@adonisjs/core/services/router"
-import AutoSwagger from "adonis-autoswagger"
-import { applySwaggerExamples } from "../config/swagger_examples.js"
 
 router.group(() => {
-	// Public
+	// Login/Logout
+	router
+		.post("login", [controllers.AccessToken, "store"])
+		.prefix("v1/auth")
+		.as("auth.login")
 	router
 		.group(() => {
-			router.post("login", [controllers.AccessToken, "store"])
-			router.post("signup", [controllers.NewAccount, "store"])
-
-			// Private
 			router
-				.group(() => {
-					router.post("logout", [controllers.AccessToken, "destroy"])
-				})
-				.use(middleware.auth())
+				.post("logout", [controllers.AccessToken, "destroy"])
+				.as("auth.logout")
 		})
 		.prefix("v1/auth")
-		.as("auth")
+		.use(middleware.auth())
 
 	// Purchases (public)
 	router.post("purchase", [controllers.Purchases, "store"]).prefix("v1")
@@ -37,6 +39,29 @@ router.group(() => {
 	// Private
 	router
 		.group(() => {
+			router.get("profile", [controllers.Profile, "show"])
+
+			// Users
+			router
+				.group(() => {
+					router
+						.get("/", [controllers.Users, "index"])
+						.use(middleware.role({ roles: ["ADMIN"] }))
+					router
+						.get("/:id", [controllers.Users, "show"])
+						.use(middleware.role({ roles: ["ADMIN"] }))
+					router
+						.post("/", [controllers.Users, "store"])
+						.use(middleware.role({ roles: ["ADMIN"] }))
+					router
+						.put("/:id", [controllers.Users, "update"])
+						.use(middleware.role({ roles: ["ADMIN", "USER"] }))
+					router
+						.delete("/:id", [controllers.Users, "destroy"])
+						.use(middleware.role({ roles: ["ADMIN"] }))
+				})
+				.prefix("users")
+
 			// Transactions
 			router
 				.group(() => {
@@ -63,6 +88,7 @@ router.group(() => {
 					router.put("/:id", [controllers.Products, "update"])
 					router.delete("/:id", [controllers.Products, "destroy"])
 				})
+				.use(middleware.role({ roles: ["ADMIN"] }))
 				.prefix("products")
 
 			// Gateways
@@ -82,12 +108,24 @@ router.group(() => {
 })
 
 router.get("/swagger", async () => {
-	const spec = await AutoSwagger.default.json(router.toJSON(), swagger)
+	if (process.env.NODE_ENV === swagger.productionEnv) {
+		return readSwaggerSpec()
+	}
 
-	return AutoSwagger.default.jsonToYaml(applySwaggerExamples(spec))
+	return generateSwaggerSpec()
 })
 
-// Renders Swagger-UI and passes YAML-output of /swagger
 router.get("/docs", async () => {
-	return AutoSwagger.default.ui("/swagger", swagger)
+	return renderSwaggerUiHtml("/swagger")
+})
+
+router.get("/docs/assets/:file", async ({ params, response }) => {
+	const asset = readSwaggerUiAsset(params.file)
+
+	if (!asset) {
+		return response.notFound({ message: "Asset not found" })
+	}
+
+	response.header("content-type", asset.contentType)
+	return asset.body
 })

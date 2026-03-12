@@ -5,9 +5,34 @@ import { updateGatewayPriorityValidator } from "#validators/gateway"
 
 export default class GatewaysController {
 	/**
-	 * @index
-	 * @summary Listar gateways
-	 * @responseBody 200 - <GatewayListResponseDto>
+	 * @openapi
+	 * /v1/gateways:
+	 *   get:
+	 *     tags:
+	 *       - Gateways
+	 *     summary: Listar gateways
+	 *     security:
+	 *       - BearerAuth: []
+	 *     responses:
+	 *       '200':
+	 *         description: Lista de gateways retornada com sucesso.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               required:
+	 *                 - data
+	 *               properties:
+	 *                 data:
+	 *                   type: array
+	 *                   items:
+	 *                     $ref: '#/components/schemas/Gateway'
+	 *       '401':
+	 *         description: Token ausente ou inválido.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/UnauthorizedResponse'
 	 */
 	async index({ response }: HttpContext) {
 		const gateways = await Gateway.query().orderBy("priority", "asc")
@@ -18,9 +43,51 @@ export default class GatewaysController {
 	}
 
 	/**
-	 * @toggle
-	 * @summary Ativar/desativar gateway
-	 * @responseBody 200 - <GatewayMessageDataResponseDto>
+	 * @openapi
+	 * /v1/gateways/{id}/toggle:
+	 *   patch:
+	 *     tags:
+	 *       - Gateways
+	 *     summary: Ativar ou desativar gateway
+	 *     security:
+	 *       - BearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         description: ID do gateway.
+	 *         schema:
+	 *           type: integer
+	 *     responses:
+	 *       '200':
+	 *         description: Gateway atualizado com sucesso.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               required:
+	 *                 - message
+	 *                 - data
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Gateway atualizado com sucesso
+	 *                 data:
+	 *                   $ref: '#/components/schemas/Gateway'
+	 *       '401':
+	 *         description: Token ausente ou inválido.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/UnauthorizedResponse'
+	 *       '404':
+	 *         description: Gateway não encontrado.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/MessageResponse'
+	 *             example:
+	 *               message: Registro não encontrado
 	 */
 	async toggle({ params, response }: HttpContext) {
 		const gateway = await Gateway.findOrFail(params.id)
@@ -35,10 +102,63 @@ export default class GatewaysController {
 	}
 
 	/**
-	 * @updatePriority
-	 * @summary Atualizar prioridade do gateway
-	 * @requestBody <UpdateGatewayPriorityDto>
-	 * @responseBody 200 - <GatewayMessageDataResponseDto>
+	 * @openapi
+	 * /v1/gateways/{id}/priority:
+	 *   patch:
+	 *     tags:
+	 *       - Gateways
+	 *     summary: Atualizar prioridade do gateway
+	 *     security:
+	 *       - BearerAuth: []
+	 *     parameters:
+	 *       - in: path
+	 *         name: id
+	 *         required: true
+	 *         description: ID do gateway.
+	 *         schema:
+	 *           type: integer
+	 *     requestBody:
+	 *       required: true
+	 *       content:
+	 *         application/json:
+	 *           schema:
+	 *             $ref: '#/components/schemas/UpdateGatewayPriorityRequest'
+	 *     responses:
+	 *       '200':
+	 *         description: Prioridade atualizada com sucesso.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               type: object
+	 *               required:
+	 *                 - message
+	 *                 - data
+	 *               properties:
+	 *                 message:
+	 *                   type: string
+	 *                   example: Prioridade atualizada com sucesso
+	 *                 data:
+	 *                   $ref: '#/components/schemas/Gateway'
+	 *       '401':
+	 *         description: Token ausente ou inválido.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/UnauthorizedResponse'
+	 *       '404':
+	 *         description: Gateway ativo não encontrado.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/MessageResponse'
+	 *             example:
+	 *               message: Gateway não encontrado
+	 *       '422':
+	 *         description: Erro de validação.
+	 *         content:
+	 *           application/json:
+	 *             schema:
+	 *               $ref: '#/components/schemas/ValidationErrorResponse'
 	 */
 	async updatePriority({ params, request, response }: HttpContext) {
 		const trx = await db.transaction()
