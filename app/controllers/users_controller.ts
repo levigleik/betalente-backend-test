@@ -1,24 +1,22 @@
 import type { HttpContext } from "@adonisjs/core/http"
-import Product from "#models/product"
-import {
-	createProductValidator,
-	updateProductValidator,
-} from "#validators/product"
+import User from "#models/user"
+import UserTransformer from "#transformers/user_transformer"
+import { createUserValidator, updateUserValidator } from "#validators/user"
 
-export default class ProductsController {
+export default class UsersController {
 	/**
 	 * @openapi
-	 * /v1/products:
+	 * /v1/users:
 	 *   get:
 	 *     tags:
-	 *       - Products
-	 *     summary: Listar produtos
+	 *       - Users
+	 *     summary: Listar usuários
 	 *     description: Requer autenticação e acesso permitido para a role ADMIN.
 	 *     security:
 	 *       - BearerAuth: []
 	 *     responses:
 	 *       '200':
-	 *         description: Lista de produtos retornada com sucesso.
+	 *         description: Lista de usuários retornada com sucesso.
 	 *         content:
 	 *           application/json:
 	 *             schema:
@@ -29,7 +27,7 @@ export default class ProductsController {
 	 *                 data:
 	 *                   type: array
 	 *                   items:
-	 *                     $ref: '#/components/schemas/Product'
+	 *                     $ref: '#/components/schemas/User'
 	 *       '401':
 	 *         description: Token ausente ou inválido.
 	 *         content:
@@ -46,20 +44,20 @@ export default class ProductsController {
 	 *               message: Você não tem permissão para acessar este recurso
 	 */
 	async index({ response }: HttpContext) {
-		const products = await Product.all()
+		const users = await User.all()
 
 		return response.ok({
-			data: products,
+			data: users,
 		})
 	}
 
 	/**
 	 * @openapi
-	 * /v1/products/{id}:
+	 * /v1/users/{id}:
 	 *   get:
 	 *     tags:
-	 *       - Products
-	 *     summary: Obter produto
+	 *       - Users
+	 *     summary: Obter usuário
 	 *     description: Requer autenticação e acesso permitido para a role ADMIN.
 	 *     security:
 	 *       - BearerAuth: []
@@ -67,12 +65,12 @@ export default class ProductsController {
 	 *       - in: path
 	 *         name: id
 	 *         required: true
-	 *         description: ID do produto.
+	 *         description: ID do usuário.
 	 *         schema:
 	 *           type: integer
 	 *     responses:
 	 *       '200':
-	 *         description: Produto retornado com sucesso.
+	 *         description: Usuário retornado com sucesso.
 	 *         content:
 	 *           application/json:
 	 *             schema:
@@ -81,7 +79,7 @@ export default class ProductsController {
 	 *                 - data
 	 *               properties:
 	 *                 data:
-	 *                   $ref: '#/components/schemas/Product'
+	 *                   $ref: '#/components/schemas/User'
 	 *       '401':
 	 *         description: Token ausente ou inválido.
 	 *         content:
@@ -97,7 +95,7 @@ export default class ProductsController {
 	 *             example:
 	 *               message: Você não tem permissão para acessar este recurso
 	 *       '404':
-	 *         description: Produto não encontrado.
+	 *         description: Usuário não encontrado.
 	 *         content:
 	 *           application/json:
 	 *             schema:
@@ -106,21 +104,21 @@ export default class ProductsController {
 	 *               message: Registro não encontrado
 	 */
 	async show({ params, response }: HttpContext) {
-		const product = await Product.findOrFail(params.id)
+		const user = await User.findOrFail(params.id)
 
 		return response.ok({
-			data: product,
+			data: user,
 		})
 	}
 
 	/**
 	 * @openapi
-	 * /v1/products:
+	 * /v1/users:
 	 *   post:
 	 *     tags:
-	 *       - Products
-	 *     summary: Criar produto
-	 *     description: Requer autenticação e acesso permitido para a role ADMIN.
+	 *       - Users
+	 *     summary: Criar usuário
+	 *     description: Requer autenticação e acesso permitido para o papel ADMIN.
 	 *     security:
 	 *       - BearerAuth: []
 	 *     requestBody:
@@ -128,23 +126,24 @@ export default class ProductsController {
 	 *       content:
 	 *         application/json:
 	 *           schema:
-	 *             $ref: '#/components/schemas/CreateProductRequest'
+	 *             $ref: '#/components/schemas/CreateUserRequest'
 	 *     responses:
-	 *       '201':
-	 *         description: Produto criado com sucesso.
+	 *       '200':
+	 *         description: Usuário criado com sucesso.
 	 *         content:
 	 *           application/json:
 	 *             schema:
 	 *               type: object
 	 *               required:
-	 *                 - message
 	 *                 - data
 	 *               properties:
-	 *                 message:
-	 *                   type: string
-	 *                   example: Produto criado com sucesso
 	 *                 data:
-	 *                   $ref: '#/components/schemas/Product'
+	 *                   type: object
+	 *                   required:
+	 *                     - user
+	 *                   properties:
+	 *                     user:
+	 *                       $ref: '#/components/schemas/UserPublic'
 	 *       '401':
 	 *         description: Token ausente ou inválido.
 	 *         content:
@@ -166,27 +165,24 @@ export default class ProductsController {
 	 *             schema:
 	 *               $ref: '#/components/schemas/ValidationErrorResponse'
 	 */
-	async store({ request, response }: HttpContext) {
-		const payload = await request.validateUsing(createProductValidator)
+	async store({ request, serialize }: HttpContext) {
+		const { fullName, email, password } =
+			await request.validateUsing(createUserValidator)
 
-		const product = await Product.create({
-			name: payload.name,
-			amount: payload.amount,
-		})
+		const user = await User.create({ fullName, email, password, role: "USER" })
 
-		return response.created({
-			message: "Produto criado com sucesso",
-			data: product,
+		return serialize({
+			user: UserTransformer.transform(user),
 		})
 	}
 
 	/**
 	 * @openapi
-	 * /v1/products/{id}:
+	 * /v1/users/{id}:
 	 *   put:
 	 *     tags:
-	 *       - Products
-	 *     summary: Atualizar produto
+	 *       - Users
+	 *     summary: Atualizar usuário
 	 *     description: Requer autenticação e acesso permitido para a role ADMIN.
 	 *     security:
 	 *       - BearerAuth: []
@@ -194,7 +190,7 @@ export default class ProductsController {
 	 *       - in: path
 	 *         name: id
 	 *         required: true
-	 *         description: ID do produto.
+	 *         description: ID do usuário.
 	 *         schema:
 	 *           type: integer
 	 *     requestBody:
@@ -202,10 +198,10 @@ export default class ProductsController {
 	 *       content:
 	 *         application/json:
 	 *           schema:
-	 *             $ref: '#/components/schemas/UpdateProductRequest'
+	 *             $ref: '#/components/schemas/UpdateUserRequest'
 	 *     responses:
 	 *       '200':
-	 *         description: Produto atualizado com sucesso.
+	 *         description: Usuário atualizado com sucesso.
 	 *         content:
 	 *           application/json:
 	 *             schema:
@@ -216,9 +212,9 @@ export default class ProductsController {
 	 *               properties:
 	 *                 message:
 	 *                   type: string
-	 *                   example: Produto atualizado com sucesso
+	 *                   example: Usuário atualizado com sucesso
 	 *                 data:
-	 *                   $ref: '#/components/schemas/Product'
+	 *                   $ref: '#/components/schemas/User'
 	 *       '401':
 	 *         description: Token ausente ou inválido.
 	 *         content:
@@ -234,7 +230,7 @@ export default class ProductsController {
 	 *             example:
 	 *               message: Você não tem permissão para acessar este recurso
 	 *       '404':
-	 *         description: Produto não encontrado.
+	 *         description: Usuário não encontrado.
 	 *         content:
 	 *           application/json:
 	 *             schema:
@@ -249,25 +245,25 @@ export default class ProductsController {
 	 *               $ref: '#/components/schemas/ValidationErrorResponse'
 	 */
 	async update({ params, request, response }: HttpContext) {
-		const product = await Product.findOrFail(params.id)
-		const payload = await request.validateUsing(updateProductValidator)
+		const user = await User.findOrFail(params.id)
+		const payload = await request.validateUsing(updateUserValidator)
 
-		product.merge(payload)
-		await product.save()
+		user.merge(payload)
+		await user.save()
 
 		return response.ok({
-			message: "Produto atualizado com sucesso",
-			data: product,
+			message: "Usuário atualizado com sucesso",
+			data: user,
 		})
 	}
 
 	/**
 	 * @openapi
-	 * /v1/products/{id}:
+	 * /v1/users/{id}:
 	 *   delete:
 	 *     tags:
-	 *       - Products
-	 *     summary: Remover produto
+	 *       - Users
+	 *     summary: Remover usuário
 	 *     description: Requer autenticação e acesso permitido para a role ADMIN.
 	 *     security:
 	 *       - BearerAuth: []
@@ -275,18 +271,18 @@ export default class ProductsController {
 	 *       - in: path
 	 *         name: id
 	 *         required: true
-	 *         description: ID do produto.
+	 *         description: ID do usuário.
 	 *         schema:
 	 *           type: integer
 	 *     responses:
 	 *       '200':
-	 *         description: Produto removido com sucesso.
+	 *         description: Usuário removido com sucesso.
 	 *         content:
 	 *           application/json:
 	 *             schema:
 	 *               $ref: '#/components/schemas/MessageResponse'
 	 *             example:
-	 *               message: Produto removido com sucesso
+	 *               message: Usuário removido com sucesso
 	 *       '401':
 	 *         description: Token ausente ou inválido.
 	 *         content:
@@ -302,7 +298,7 @@ export default class ProductsController {
 	 *             example:
 	 *               message: Você não tem permissão para acessar este recurso
 	 *       '404':
-	 *         description: Produto não encontrado.
+	 *         description: Usuário não encontrado.
 	 *         content:
 	 *           application/json:
 	 *             schema:
@@ -310,13 +306,24 @@ export default class ProductsController {
 	 *             example:
 	 *               message: Registro não encontrado
 	 */
-	async destroy({ params, response }: HttpContext) {
-		const product = await Product.findOrFail(params.id)
+	async destroy({ params, response, auth }: HttpContext) {
+		const user = await User.findOrFail(params.id)
+		const userLoggedIn = auth.getUserOrFail()
 
-		await product.delete()
+		if (userLoggedIn?.id === user.id)
+			return response.forbidden({
+				message: "Não é possível se auto excluir",
+			})
+
+		if (user.role === "ADMIN")
+			return response.forbidden({
+				message: "Não é possível excluir outro administrador",
+			})
+
+		await user.delete()
 
 		return response.ok({
-			message: "Produto removido com sucesso",
+			message: "Usuário removido com sucesso",
 		})
 	}
 }

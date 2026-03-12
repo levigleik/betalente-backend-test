@@ -35,4 +35,9 @@ export default await Env.create(new URL("../", import.meta.url), {
 	DB_USER: Env.schema.string(),
 	DB_PASSWORD: Env.schema.string(),
 	DB_DATABASE: Env.schema.string(),
+
+	// Admin
+	ADMIN_NAME: Env.schema.string(),
+	ADMIN_EMAIL: Env.schema.string({ format: "email" }),
+	ADMIN_PASSWORD: Env.schema.string(),
 })
