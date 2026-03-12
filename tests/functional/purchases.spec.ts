@@ -1,121 +1,131 @@
-import { test } from "@japa/runner"
 import testUtils from "@adonisjs/core/services/test_utils"
-// import User from '#models/user'
+import { test } from "@japa/runner"
 import Gateway from "#models/gateway"
 import Transaction from "#models/transaction"
 import env from "#start/env"
+import {
+	createProducts,
+	makePurchasePayload,
+	seedDefaultGateways,
+} from "../helpers/test_data.js"
 
 test.group("Purchases", (group) => {
-	// let authUser: User
+	let productA: Awaited<ReturnType<typeof createProducts>>[number]
+	let productB: Awaited<ReturnType<typeof createProducts>>[number]
 
 	group.each.setup(() => testUtils.db().truncate())
 
-	group.setup(async () => {
-		// Relying on external gateways defined in docker-compose.yml
-		// running on ports 3001 and 3002
-	})
-
 	group.each.setup(async () => {
-		// Generate auth user for routes that might need auth
-		// Purchases is public in routes.ts! Route: router.post("purchase", [controllers.Purchases, "store"]).prefix("v1")
-		// Let's seed the gateways so PaymentProcessor works
-		await Gateway.createMany([
-			{ name: "gateway_1", priority: 1, isActive: true },
-			{ name: "gateway_2", priority: 2, isActive: true },
+		await seedDefaultGateways()
+
+		;[productA, productB] = await createProducts()
+	})
+
+	test("process purchase and calculate total on backend", async ({
+		client,
+		assert,
+	}) => {
+		const payload = makePurchasePayload([
+			{ id: productA.id, quantity: 1 },
+			{ id: productA.id, quantity: 2 },
+			{ id: productB.id, quantity: 1 },
 		])
-	})
-
-	test("successfully process a purchase via gateway 1", async ({
-		client,
-		assert,
-	}) => {
-		const payload = {
-			name: "John Doe",
-			email: "john@example.com",
-			amount: 100,
-			cardNumber: "1111222233334444",
-			cvv: "123",
-		}
 
 		const response = await client.post("/v1/purchase").json(payload)
 
 		response.assertStatus(200)
-		assert.equal(response.body().message, "Pagamento realizado com sucesso")
-		assert.exists(response.body().data.id)
-		assert.equal(response.body().data.status, "paid")
-		assert.equal(response.body().data.cardLastNumbers, "4444")
-
-		const transaction = await Transaction.find(response.body().data.id)
-		assert.isNotNull(transaction)
-		assert.equal(transaction?.status, "paid")
-		assert.isString(transaction?.externalId) // UUID from real gateway
-	})
-
-	test("fallback to gateway 2 if gateway 1 fails", async ({
-		client,
-		assert,
-	}) => {
-		// Break Gateway 1 URL temporarily to force a failure
-		const originalUrl = env.get("GATEWAY_1_URL")
-		env.set("GATEWAY_1_URL", "http://localhost:59999") // Invalid port
-
-		const payload = {
-			name: "John Doe",
-			email: "john@example.com",
-			amount: 100,
-			cardNumber: "1111222233334444",
-			cvv: "123",
-		}
-
-		const response = await client.post("/v1/purchase").json(payload)
-
-		// Restore URL
-		env.set("GATEWAY_1_URL", originalUrl as string)
-
-		response.assertStatus(200)
-		assert.equal(response.body().message, "Pagamento realizado com sucesso")
-		assert.equal(response.body().data.status, "paid")
-
-		const transaction = await Transaction.find(response.body().data.id)
-		assert.isNotNull(transaction)
-		assert.equal(transaction?.status, "paid")
-		assert.isString(transaction?.externalId)
-		// Gateway 2 should have processed it
-		assert.equal(transaction?.gatewayId, 2)
-	})
-
-	test("return bad request if all gateways fail", async ({
-		client,
-		assert,
-	}) => {
-		// Turn off gateway 2 to simulate total failure
-		await Gateway.query().where("name", "gateway_2").update({ isActive: false })
-
-		// Break Gateway 1 URL temporarily to force a failure
-		const originalUrl = env.get("GATEWAY_1_URL")
-		env.set("GATEWAY_1_URL", "http://localhost:59999") // Invalid port
-
-		const payload = {
-			name: "John Doe",
-			email: "john@example.com",
-			amount: 100,
-			cardNumber: "1111222233334444",
-			cvv: "123",
-		}
-
-		const response = await client.post("/v1/purchase").json(payload)
-
-		// Restore URL
-		env.set("GATEWAY_1_URL", originalUrl as string)
-
-		response.assertStatus(400)
-		assert.equal(
-			response.body().message,
-			"Não foi possível processar o pagamento",
+		const body = response.body() as any
+		assert.equal(body.message, "Pagamento realizado com sucesso")
+		assert.equal(body.data.status, "paid")
+		assert.equal(body.data.amount, 550)
+		assert.match(
+			body.data.externalId,
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
 		)
-		assert.equal(response.body().data.status, "failed")
 
-		const transaction = await Transaction.find(response.body().data.id)
-		assert.equal(transaction?.status, "failed")
+		const transaction = await Transaction.query()
+			.where("id", body.data.id)
+			.preload("transactionProducts")
+			.firstOrFail()
+
+		assert.lengthOf(transaction.transactionProducts, 2)
+		const transactionProducts = transaction.transactionProducts.sort(
+			(a, b) => a.productId - b.productId,
+		)
+		assert.equal(transactionProducts[0].productId, productA.id)
+		assert.equal(transactionProducts[0].quantity, 3)
+		assert.equal(transactionProducts[1].productId, productB.id)
+		assert.equal(transactionProducts[1].quantity, 1)
+	})
+
+	test("fallback to gateway 2 when gateway 1 fails", async ({
+		client,
+		assert,
+	}) => {
+		const gatewayTwo = await Gateway.findByOrFail("name", "gateway_2")
+		const originalGatewayOneUrl = env.get("GATEWAY_1_URL")
+		const payload = makePurchasePayload(
+			[{ id: productA.id, quantity: 1 }],
+			{ cardNumber: "4111111111111111" },
+		)
+
+		env.set("GATEWAY_1_URL", "http://localhost:3001/invalid")
+
+		try {
+			const response = await client.post("/v1/purchase").json(payload)
+
+			response.assertStatus(200)
+			const body = response.body() as any
+			assert.equal(body.data.status, "paid")
+			assert.equal(body.data.gatewayId, gatewayTwo.id)
+			assert.match(
+				body.data.externalId,
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+			)
+		} finally {
+			env.set("GATEWAY_1_URL", originalGatewayOneUrl)
+		}
+	})
+
+	test("return bad request when all gateways fail", async ({
+		client,
+		assert,
+	}) => {
+		const originalGatewayOneUrl = env.get("GATEWAY_1_URL")
+		const originalGatewayTwoUrl = env.get("GATEWAY_2_URL")
+		const payload = makePurchasePayload(
+			[{ id: productA.id, quantity: 1 }],
+			{ cardNumber: "4111111111111111" },
+		)
+
+		env.set("GATEWAY_1_URL", "http://localhost:3001/invalid")
+		env.set("GATEWAY_2_URL", "http://localhost:3002/invalid")
+
+		try {
+			const response = await client.post("/v1/purchase").json(payload)
+
+			response.assertStatus(400)
+			const body = response.body() as any
+			assert.equal(body.message, "Não foi possível processar o pagamento")
+			assert.equal(body.data.status, "failed")
+			assert.equal(body.data.amount, 100)
+		} finally {
+			env.set("GATEWAY_1_URL", originalGatewayOneUrl)
+			env.set("GATEWAY_2_URL", originalGatewayTwoUrl)
+		}
+	})
+
+	test("validate purchase payload", async ({ client, assert }) => {
+		const response = await client.post("/v1/purchase").json({
+			name: "Invalid Purchase",
+			email: "invalid.purchase@example.com",
+			products: [],
+			cardNumber: "123",
+			cvv: "1",
+		})
+
+		response.assertStatus(422)
+		const body = response.body() as any
+		assert.isArray(body.errors)
 	})
 })

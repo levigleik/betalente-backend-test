@@ -2,86 +2,90 @@ import testUtils from "@adonisjs/core/services/test_utils"
 import { test } from "@japa/runner"
 import Client from "#models/client"
 import Gateway from "#models/gateway"
+import Product from "#models/product"
 import Transaction from "#models/transaction"
 import User from "#models/user"
-import env from "#start/env"
+import {
+	createAdminUser,
+	makePurchasePayload,
+	seedDefaultGateways,
+} from "../helpers/test_data.js"
 
 test.group("Transactions", (group) => {
-	let authUser: User
+	let admin: User
 	let clientInDb: Client
-	let gatewayInDb: Gateway
+	let gatewayOne: Gateway
+	let product: Product
 
 	group.each.setup(() => testUtils.db().truncate())
 
-	group.setup(async () => {
-		// Relying on external gateways defined in docker-compose.yml
-		// running on ports 3001 and 3002
-	})
-
 	group.each.setup(async () => {
-		authUser = await User.create({
-			fullName: "Admin User",
-			email: "admin@example.com",
-			password: "secretpassword",
-		})
-
+		admin = await createAdminUser()
 		clientInDb = await Client.create({
 			name: "John Client",
 			email: "john.client@example.com",
 		})
 
-		await Gateway.createMany([
-			{ name: "gateway_1", priority: 1, isActive: true },
-			{ name: "gateway_2", priority: 2, isActive: true },
-		])
-
-		gatewayInDb = await Gateway.findByOrFail("name", "gateway_1")
+		await seedDefaultGateways()
+		gatewayOne = await Gateway.findByOrFail("name", "gateway_1")
+		product = await Product.create({
+			name: "Listed Product",
+			amount: 150,
+		})
 	})
 
 	test("list transactions", async ({ client, assert }) => {
 		await Transaction.create({
 			clientId: clientInDb.id,
-			gatewayId: gatewayInDb.id,
+			gatewayId: gatewayOne.id,
 			status: "paid",
-			amount: 150.0,
+			amount: 150,
 			cardLastNumbers: "1234",
 			externalId: "ext_1",
 		})
 
-		const response = await client.get("/v1/transactions").loginAs(authUser)
+		const response = await client.get("/v1/transactions").loginAs(admin)
 
 		response.assertStatus(200)
 		const body = response.body() as any
 		assert.isArray(body.data)
 		assert.lengthOf(body.data, 1)
-		assert.equal(body.data[0].amount, 150)
+		assert.equal(body.data[0].client.id, clientInDb.id)
+		assert.equal(body.data[0].gateway.id, gatewayOne.id)
 	})
 
-	test("show transaction details", async ({ client, assert }) => {
-		const trx = await Transaction.create({
+	test("show transaction details with products", async ({ client, assert }) => {
+		const transaction = await Transaction.create({
 			clientId: clientInDb.id,
-			gatewayId: gatewayInDb.id,
+			gatewayId: gatewayOne.id,
 			status: "paid",
-			amount: 150.0,
+			amount: 300,
 			cardLastNumbers: "1234",
-			externalId: "ext_1",
+			externalId: "ext_2",
+		})
+		await transaction.related("transactionProducts").create({
+			productId: product.id,
+			quantity: 2,
 		})
 
 		const response = await client
-			.get(`/v1/transactions/${trx.id}`)
-			.loginAs(authUser)
+			.get(`/v1/transactions/${transaction.id}`)
+			.loginAs(admin)
 
 		response.assertStatus(200)
 		const body = response.body() as any
-		assert.equal(body.data.id, trx.id)
+		assert.equal(body.data.id, transaction.id)
 		assert.equal(body.data.client.id, clientInDb.id)
-		assert.equal(body.data.gateway.id, gatewayInDb.id)
+		assert.equal(body.data.gateway.id, gatewayOne.id)
+		assert.lengthOf(body.data.transactionProducts, 1)
+		assert.equal(body.data.transactionProducts[0].product.id, product.id)
+		assert.equal(body.data.transactionProducts[0].quantity, 2)
 	})
 
 	test("return 404 for unknown transaction id", async ({ client }) => {
 		const response = await client
 			.get("/v1/transactions/99999")
-			.loginAs(authUser)
+			.loginAs(admin)
 
 		response.assertStatus(404)
 		response.assertBodyContains({
@@ -90,43 +94,42 @@ test.group("Transactions", (group) => {
 	})
 
 	test("refund transaction successfully", async ({ client, assert }) => {
-		const purchaseResponse = await client.post("/v1/purchase").json({
-			name: "Refund User",
-			email: "refund.user@example.com",
-			amount: 100,
-			cardNumber: "1111222233334444",
-			cvv: "123",
-		})
+		const purchaseResponse = await client.post("/v1/purchase").json(
+			makePurchasePayload([{ id: product.id, quantity: 2 }], {
+				name: "Refunded User",
+				email: "refunded.user@example.com",
+			}),
+		)
 
 		purchaseResponse.assertStatus(200)
 		const transactionId = purchaseResponse.body().data.id
 
 		const response = await client
 			.post(`/v1/transactions/${transactionId}/refund`)
-			.loginAs(authUser)
+			.loginAs(admin)
 
 		response.assertStatus(200)
 		const body = response.body() as any
 		assert.equal(body.message, "Reembolso realizado com sucesso")
 		assert.equal(body.data.status, "refunded")
 
-		const dbTrx = await Transaction.find(transactionId)
-		assert.equal(dbTrx?.status, "refunded")
+		const dbTransaction = await Transaction.findOrFail(transactionId)
+		assert.equal(dbTransaction.status, "refunded")
 	})
 
-	test("refuse refund if not paid", async ({ client, assert }) => {
-		const trx = await Transaction.create({
+	test("refuse refund if transaction is not paid", async ({ client, assert }) => {
+		const transaction = await Transaction.create({
 			clientId: clientInDb.id,
-			gatewayId: gatewayInDb.id,
+			gatewayId: gatewayOne.id,
 			status: "pending",
-			amount: 150.0,
+			amount: 150,
 			cardLastNumbers: "1234",
-			externalId: "ext_1",
+			externalId: "ext_pending",
 		})
 
 		const response = await client
-			.post(`/v1/transactions/${trx.id}/refund`)
-			.loginAs(authUser)
+			.post(`/v1/transactions/${transaction.id}/refund`)
+			.loginAs(admin)
 
 		response.assertStatus(400)
 		const body = response.body() as any
@@ -137,44 +140,31 @@ test.group("Transactions", (group) => {
 	})
 
 	test("return error from gateway refund", async ({ client, assert }) => {
-		const purchaseResponse = await client.post("/v1/purchase").json({
-			name: "Refund Failure User",
-			email: "refund.failure@example.com",
-			amount: 100,
-			cardNumber: "1111222233334444",
-			cvv: "123",
+		const transaction = await Transaction.create({
+			clientId: clientInDb.id,
+			gatewayId: gatewayOne.id,
+			status: "paid",
+			amount: 200,
+			cardLastNumbers: "9999",
+			externalId: "11111111-1111-1111-1111-111111111111",
 		})
-
-		purchaseResponse.assertStatus(200)
-		const transactionId = purchaseResponse.body().data.id
-		const transaction = await Transaction.findOrFail(transactionId)
-		await transaction.load("gateway")
-
-		const gatewayUrlKey =
-			transaction.gateway?.name === "gateway_2"
-				? "GATEWAY_2_URL"
-				: "GATEWAY_1_URL"
-		const originalUrl = env.get(gatewayUrlKey)
-		env.set(gatewayUrlKey, "http://localhost:59999")
 
 		const response = await client
 			.post(`/v1/transactions/${transaction.id}/refund`)
-			.loginAs(authUser)
-
-		env.set(gatewayUrlKey, originalUrl as string)
+			.loginAs(admin)
 
 		response.assertStatus(400)
 		const body = response.body() as any
 		assert.equal(body.message, "Falha ao realizar reembolso no gateway")
 
-		const dbTrx = await Transaction.findOrFail(transaction.id)
-		assert.equal(dbTrx.status, "paid")
+		const dbTransaction = await Transaction.findOrFail(transaction.id)
+		assert.equal(dbTransaction.status, "paid")
 	})
 
 	test("return 404 when refunding unknown transaction", async ({ client }) => {
 		const response = await client
 			.post("/v1/transactions/99999/refund")
-			.loginAs(authUser)
+			.loginAs(admin)
 
 		response.assertStatus(404)
 		response.assertBodyContains({

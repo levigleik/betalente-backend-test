@@ -10,7 +10,7 @@ type ProcessPayload = {
 	cvv: string
 }
 
-type ProcessResult = {
+export type ProcessResult = {
 	success: boolean
 	gatewayId?: number
 	externalId?: string
@@ -40,7 +40,7 @@ export default class PaymentProcessorService {
 
 			const result = await service.charge(payload)
 
-			if (result.success) {
+			if (result.success && result.externalId) {
 				return {
 					success: true,
 					gatewayId: gateway.id,
