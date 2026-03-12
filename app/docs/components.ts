@@ -395,7 +395,7 @@
  *       required:
  *         - name
  *         - email
- *         - amount
+ *         - products
  *         - cardNumber
  *         - cvv
  *       properties:
@@ -406,9 +406,20 @@
  *           type: string
  *           format: email
  *           example: john@example.com
- *         amount:
- *           type: number
- *           example: 99.9
+ *         products:
+ *           type: array
+ *           items:
+ *              type: object
+ *              required:
+ *                - id
+ *                - quantity
+ *              properties:
+ *                id:
+ *                  type: number
+ *                  example: 1
+ *                quantity:
+ *                  type: number
+ *                  example: 1
  *         cardNumber:
  *           type: string
  *           minLength: 13

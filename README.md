@@ -115,6 +115,12 @@ npm run docs:generate
 - `POST /v1/auth/login` - Autentica um usuário
 - `POST /v1/purchase` - Realiza uma compra
 
+### Regras da compra
+- O payload de `purchase` recebe os produtos com `id` e `quantity`.
+- O backend busca os produtos no banco, calcula o valor total da compra e só então envia o pagamento para o gateway.
+- Se o mesmo produto for enviado mais de uma vez no payload, é feito um merge das quantidades antes do processamento.
+- A criação de cliente, transação e itens da transação usa `trx` para garantir atomicidade no banco.
+
 ### Autenticadas
 - `POST /v1/auth/logout` - Encerra a sessão/token atual
 - `GET /v1/profile` - Retorna o usuário autenticado
