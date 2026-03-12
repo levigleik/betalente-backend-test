@@ -54,7 +54,6 @@ Os seeds criam os gateways iniciais e também um usuário administrador com base
 
 
 6. **Acesse a aplicação**
-   - API: http://localhost:3335
    - Documentação Swagger: http://localhost:3335/docs
 
 ### Manualmente (Desenvolvimento)
@@ -195,7 +194,7 @@ NODE_ENV=development
 
 # Aplicação
 # node ace generate:key
-APP_KEY=chave-gerada-com-comando-acime
+APP_KEY=chave-gerada-com-comando-acima
 APP_URL=http://localhost:3333
 
 # Banco de Dados
