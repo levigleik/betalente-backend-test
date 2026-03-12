@@ -49,12 +49,11 @@ Este é um sistema de gerenciador de pagamentos multi-gateway que se conecta a d
    - Gateway 1 mock (porta 3001)
    - Gateway 2 mock (porta 3002)
 
-4. **Execute as migrações do banco de dados**
-   ```bash
-   docker-compose exec app node ace migration:run
-   ```
 
-5. **Acesse a aplicação**
+Os seeds criam os gateways iniciais e também um usuário administrador com base nas variáveis `ADMIN_NAME`, `ADMIN_EMAIL` e `ADMIN_PASSWORD`.
+
+
+6. **Acesse a aplicação**
    - API: http://localhost:3335
    - Documentação Swagger: http://localhost:3335/docs
 
@@ -77,10 +76,18 @@ Este é um sistema de gerenciador de pagamentos multi-gateway que se conecta a d
 
 4. **Execute as migrações**
    ```bash
-   npm run migration:run
+   node ace migration:run
    ```
 
-5. **Inicie o servidor de desenvolvimento**
+5. **Execute os seeds**
+   ```bash
+   node ace db:seed
+   ```
+
+   Os seeds criam os gateways padrão e um usuário administrador usando as variáveis `ADMIN_NAME`, `ADMIN_EMAIL` e `ADMIN_PASSWORD`.
+
+
+6. **Inicie o servidor de desenvolvimento**
    ```bash
    npm run dev
    ```
@@ -91,7 +98,7 @@ Este é um sistema de gerenciador de pagamentos multi-gateway que se conecta a d
 
 O projeto possui documentação Swagger manual via blocos `@openapi` nos controllers e schemas compartilhados em `app/docs/components.ts`. Para visualizar:
 
-- **Acesse**: http://localhost:3335/docs
+- **Acesse**: http://localhost:3335/docs (docker) http://localhost:3333/docs (dev)
 - **Especificação JSON**: http://localhost:3335/swagger
 
 ### Gerar Documentação
@@ -102,69 +109,47 @@ O projeto possui documentação Swagger manual via blocos `@openapi` nos control
 npm run docs:generate
 ```
 
-## 🛣️ Detalhamento de Rotas
+## 🛣️ Rotas Disponíveis
 
-### Autenticação (Públicas)
-- `POST /v1/auth/login` - Login de usuário
-- `POST /v1/auth/signup` - Criar nova conta
-- `POST /v1/auth/logout` - Logout (requer autenticação)
+### Públicas
+- `POST /v1/auth/login` - Autentica um usuário
+- `POST /v1/purchase` - Realiza uma compra
 
-### Perfil (Privada)
-- `GET /v1/profile` - Obter dados do usuário autenticado
+### Autenticadas
+- `POST /v1/auth/logout` - Encerra a sessão/token atual
+- `GET /v1/profile` - Retorna o usuário autenticado
+- `GET /v1/transactions` - Lista transações
+- `GET /v1/transactions/:id` - Exibe uma transação
+- `POST /v1/transactions/:id/refund` - Solicita reembolso
+- `GET /v1/clients` - Lista clientes
+- `GET /v1/clients/:id` - Exibe um cliente
+- `GET /v1/gateways` - Lista gateways configurados
+- `PATCH /v1/gateways/:id/toggle` - Ativa/Desativa um gateway
+- `PATCH /v1/gateways/:id/priority` - Atualiza a prioridade de um gateway
 
-### Compras (Pública)
-- `POST /v1/purchase` - Realizar uma compra
+### Permissões por role
 
-### Transações (Privadas)
-- `GET /v1/transactions` - Listar transações
-- `GET /v1/transactions/:id` - Visualizar detalhes da transação
-- `POST /v1/transactions/:id/refund` - Solicitar reembolso
+#### Users
 
-### Clientes (Privadas)
-- `GET /v1/clients` - Listar clientes
-- `GET /v1/clients/:id` - Visualizar detalhes do cliente
+| Método | Rota | Permissão |
+| --- | --- | --- |
+| `GET` | `/v1/users` | `ADMIN` |
+| `GET` | `/v1/users/:id` | `ADMIN` |
+| `POST` | `/v1/users` | `ADMIN` |
+| `PUT` | `/v1/users/:id` | `ADMIN` ou `USER` |
+| `DELETE` | `/v1/users/:id` | `ADMIN` |
 
-### Produtos (Privadas)
-- `GET /v1/products` - Listar produtos
-- `GET /v1/products/:id` - Visualizar detalhes do produto
-- `POST /v1/products` - Criar novo produto
-- `PUT /v1/products/:id` - Atualizar produto
-- `DELETE /v1/products/:id` - Excluir produto
+> O endpoint `POST /v1/users` cria usuários com role `USER`. O seed é responsável por criar o usuário administrador inicial.
 
-### Gateways (Privadas)
-- `GET /v1/gateways` - Listar gateways configurados
-- `PATCH /v1/gateways/:id/toggle` - Ativar/Desativar gateway
-- `PATCH /v1/gateways/:id/priority` - Atualizar prioridade do gateway
+#### Products
 
-## 🏗️ Arquitetura
-
-### Estrutura de Pastas
-
-```
-app/
-├── controllers/          # Controladores da API
-├── models/              # Models do banco de dados
-├── services/            # Lógica de negócio
-│   └── gateways/        # Serviços dos gateways de pagamento
-├── middleware/          # Middleware da aplicação
-├── validators/          # Validadores de entrada
-├── transformers/        # Transformadores de dados
-└── exceptions/          # Manipuladores de exceção
-
-config/                  # Arquivos de configuração
-database/               # Migrações e seeds
-start/                  # Bootstrap da aplicação
-tests/                  # Testes automatizados
-```
-
-### Serviços de Gateway
-
-O sistema possui uma arquitetura modular para gateways:
-
-- **Gateway One Service**: Implementação do primeiro gateway
-- **Gateway Two Service**: Implementação do segundo gateway  
-- **Payment Processor Service**: Orquestrador do processamento de pagamentos
-- **Refund Transaction Service**: Serviço de reembolso
+| Método | Rota | Permissão |
+| --- | --- | --- |
+| `GET` | `/v1/products` | `ADMIN` |
+| `GET` | `/v1/products/:id` | `ADMIN` |
+| `POST` | `/v1/products` | `ADMIN` |
+| `PUT` | `/v1/products/:id` | `ADMIN` |
+| `DELETE` | `/v1/products/:id` | `ADMIN` |
 
 ## 🧪 Testes
 
@@ -203,7 +188,8 @@ HOST=localhost
 NODE_ENV=development
 
 # Aplicação
-APP_KEY=sua-chave-secreta
+# node ace generate:key
+APP_KEY=chave-gerada-com-comando-acime
 APP_URL=http://localhost:3333
 
 # Banco de Dados
@@ -217,6 +203,13 @@ DB_DATABASE=gateway_sample
 # Gateways
 GATEWAY_1_URL=http://localhost:3001
 GATEWAY_2_URL=http://localhost:3002
+
+# Admin (usado no db seed)
+ADMIN_NAME="John Doe Adm"
+ADMIN_EMAIL="john@example.com"
+ADMIN_PASSWORD="S3cur3P4s5word!"
 ```
+
+> Importante: após rodar as migrations, execute `node ace db:seed` (ou `docker-compose exec app node ace db:seed`). Além dos gateways, o seed também cria o usuário administrador inicial.
 
 **Desenvolvido com ❤️ por [Levi Gleik](https://github.com/levigleik) para BeTalent Tech**
