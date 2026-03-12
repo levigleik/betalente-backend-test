@@ -107,6 +107,10 @@ router.group(() => {
 		.use(middleware.auth())
 })
 
+router.get("/", async ({ response }) => {
+	return response.redirect("/docs")
+})
+
 router.get("/swagger", async () => {
 	if (process.env.NODE_ENV === swagger.productionEnv) {
 		return readSwaggerSpec()
