@@ -1,20 +1,17 @@
 import { BaseCommand } from "@adonisjs/core/ace"
 import type { CommandOptions } from "@adonisjs/core/types/ace"
-import AutoSwagger from "adonis-autoswagger"
-import swagger from "#config/swagger"
+import { generateSwaggerSpec, writeSwaggerSpec } from "#config/swagger_util"
 
 export default class DocsGenerate extends BaseCommand {
 	static commandName = "docs:generate"
 
 	static options: CommandOptions = {
-		startApp: true,
+		startApp: false,
 		allowUnknownFlags: false,
 		staysAlive: false,
 	}
 
 	async run() {
-		const Router = await this.app.container.make("router")
-		Router.commit()
-		await AutoSwagger.default.writeFile(Router.toJSON(), swagger)
+		writeSwaggerSpec(generateSwaggerSpec())
 	}
 }

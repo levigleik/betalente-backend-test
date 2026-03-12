@@ -1,6 +1,6 @@
-import env from "#start/env";
-import app from "@adonisjs/core/services/app";
-import { defineConfig } from "@adonisjs/lucid";
+import env from "#start/env"
+import app from "@adonisjs/core/services/app"
+import { defineConfig } from "@adonisjs/lucid"
 
 const dbConfig = defineConfig({
 	/**
@@ -127,6 +127,6 @@ const dbConfig = defineConfig({
 		//   debug: app.inDev,
 		// },
 	},
-});
+})
 
-export default dbConfig;
+export default dbConfig

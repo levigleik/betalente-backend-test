@@ -3,6 +3,23 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        PORT: 3333
+        HOST: 0.0.0.0
+        LOG_LEVEL: info
+        APP_KEY: 3N0LuiwD2Nux4K22AG5UUG26Lh7YdBO5
+        APP_URL: http://localhost:3335
+        SESSION_DRIVER: cookie
+        GATEWAY_1_URL: http://gateway1:3001
+        GATEWAY_2_URL: http://gateway2:3001
+        DB_HOST: db
+        DB_PORT: 3306
+        DB_USER: root
+        DB_PASSWORD: root
+        DB_DATABASE: gateway_sample
+        ADMIN_NAME: ${ADMIN_NAME:-John Doe Adm}
+        ADMIN_EMAIL: ${ADMIN_EMAIL:-john@example.com}
+        ADMIN_PASSWORD: ${ADMIN_PASSWORD:-S3cur3P4s5word!}
     ports:
       - "3335:3333"
     environment:
@@ -21,6 +38,9 @@ services:
       DB_DATABASE: gateway_sample
       GATEWAY_1_URL: http://gateway1:3001
       GATEWAY_2_URL: http://gateway2:3001
+      ADMIN_NAME: ${ADMIN_NAME:-John Doe Adm}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-john@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-S3cur3P4s5word!}
     depends_on:
       db:
         condition: service_healthy

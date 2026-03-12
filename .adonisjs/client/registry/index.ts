@@ -6,29 +6,59 @@ import type { ApiDefinition } from './tree.d.ts'
 const placeholder: any = {}
 
 const routes = {
-  'auth.access_token.store': {
+  'auth.login': {
     methods: ["POST"],
     pattern: '/v1/auth/login',
     tokens: [{"old":"/v1/auth/login","type":0,"val":"v1","end":""},{"old":"/v1/auth/login","type":0,"val":"auth","end":""},{"old":"/v1/auth/login","type":0,"val":"login","end":""}],
-    types: placeholder as Registry['auth.access_token.store']['types'],
+    types: placeholder as Registry['auth.login']['types'],
   },
-  'auth.new_account.store': {
-    methods: ["POST"],
-    pattern: '/v1/auth/signup',
-    tokens: [{"old":"/v1/auth/signup","type":0,"val":"v1","end":""},{"old":"/v1/auth/signup","type":0,"val":"auth","end":""},{"old":"/v1/auth/signup","type":0,"val":"signup","end":""}],
-    types: placeholder as Registry['auth.new_account.store']['types'],
-  },
-  'auth.access_token.destroy': {
+  'auth.logout': {
     methods: ["POST"],
     pattern: '/v1/auth/logout',
     tokens: [{"old":"/v1/auth/logout","type":0,"val":"v1","end":""},{"old":"/v1/auth/logout","type":0,"val":"auth","end":""},{"old":"/v1/auth/logout","type":0,"val":"logout","end":""}],
-    types: placeholder as Registry['auth.access_token.destroy']['types'],
+    types: placeholder as Registry['auth.logout']['types'],
   },
   'purchases.store': {
     methods: ["POST"],
     pattern: '/v1/purchase',
     tokens: [{"old":"/v1/purchase","type":0,"val":"v1","end":""},{"old":"/v1/purchase","type":0,"val":"purchase","end":""}],
     types: placeholder as Registry['purchases.store']['types'],
+  },
+  'profile.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/v1/profile',
+    tokens: [{"old":"/v1/profile","type":0,"val":"v1","end":""},{"old":"/v1/profile","type":0,"val":"profile","end":""}],
+    types: placeholder as Registry['profile.show']['types'],
+  },
+  'users.index': {
+    methods: ["GET","HEAD"],
+    pattern: '/v1/users',
+    tokens: [{"old":"/v1/users","type":0,"val":"v1","end":""},{"old":"/v1/users","type":0,"val":"users","end":""}],
+    types: placeholder as Registry['users.index']['types'],
+  },
+  'users.show': {
+    methods: ["GET","HEAD"],
+    pattern: '/v1/users/:id',
+    tokens: [{"old":"/v1/users/:id","type":0,"val":"v1","end":""},{"old":"/v1/users/:id","type":0,"val":"users","end":""},{"old":"/v1/users/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['users.show']['types'],
+  },
+  'users.store': {
+    methods: ["POST"],
+    pattern: '/v1/users',
+    tokens: [{"old":"/v1/users","type":0,"val":"v1","end":""},{"old":"/v1/users","type":0,"val":"users","end":""}],
+    types: placeholder as Registry['users.store']['types'],
+  },
+  'users.update': {
+    methods: ["PUT"],
+    pattern: '/v1/users/:id',
+    tokens: [{"old":"/v1/users/:id","type":0,"val":"v1","end":""},{"old":"/v1/users/:id","type":0,"val":"users","end":""},{"old":"/v1/users/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['users.update']['types'],
+  },
+  'users.destroy': {
+    methods: ["DELETE"],
+    pattern: '/v1/users/:id',
+    tokens: [{"old":"/v1/users/:id","type":0,"val":"v1","end":""},{"old":"/v1/users/:id","type":0,"val":"users","end":""},{"old":"/v1/users/:id","type":1,"val":"id","end":""}],
+    types: placeholder as Registry['users.destroy']['types'],
   },
   'transactions.index': {
     methods: ["GET","HEAD"],

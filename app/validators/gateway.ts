@@ -1,8 +1,8 @@
-import vine from '@vinejs/vine'
+import vine from "@vinejs/vine"
 
 /**
  * Validator to use when updating a gateway priority
  */
 export const updateGatewayPriorityValidator = vine.create({
-  priority: vine.number(),
+	priority: vine.number(),
 })
